@@ -1,0 +1,58 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Include default vars
+      include_vars: ../../defaults/main.yml
+
+    - name: Include haproxy_converge_vars.yml
+      include_vars: haproxy_converge_vars.yml
+
+    - name: Ensure some packages to verify (APT)
+      apt:
+        name:
+          - netcat
+          - net-tools
+        state: present
+        update_cache: true
+      when: ansible_os_family == "Debian"
+    
+    - name: Ensure some packages to verify (YUM)
+      yum:
+        name:
+          - netcat
+          - net-tools
+        state: latest
+        update_cache: true
+      when: ansible_os_family == "RedHat"
+
+    - name: Gather service_facts
+      service_facts:
+
+    - name: Assert haproxy service status
+      assert:
+        that:
+          - "ansible_facts.services['haproxy.service']['state'] == 'running'"
+        success_msg: "[PASS] HAProxy service is running"
+        fail_msg: "[Failed] HAProxy service is not running"
+      ignore_errors: true
+
+    - name: Check frontend port is listened
+      shell: |
+        netstat -tnlp | grep {{ haproxy_frontend_port }} | sed -e 's/.*\///'
+      register: check_frontend_port_listen
+    
+    - name: test
+      debug:
+        var: check_frontend_port_listen
+
+    - name: Assert frontend port is listened
+      assert:
+        that:
+          - "'haproxy' in '{{ check_frontend_port_listen.stdout }}'"
+        success_msg: "[PASS] HAProxy frontend port is listening"
+        fail_msg: "[Failed] HAProxy frontend port is not listening"
+      ignore_errors: true
+
+

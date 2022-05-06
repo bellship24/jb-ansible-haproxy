@@ -1,0 +1,30 @@
+---
+- name: Ensure HAProxy package (YUM)
+  yum:
+    name: haproxy
+    state: "{{ haproxy_status }}"
+    update_cache: true
+  when: ansible_os_family == "RedHat"
+
+- name: Ensure HAProxy package (APT)
+  apt:
+    name: haproxy
+    state: "{{ haproxy_status }}"
+    update_cache: true
+  when: ansible_os_family == "Debian"
+
+- name: Ensure haproxy.cfg
+  template:
+    src: "haproxy.cfg.j2"
+    dest: "/etc/haproxy/haproxy.cfg"
+    owner: root
+    group: root
+    mode: 0600
+  # notify: Restart haproxy
+
+- name: Restart haproxy
+  service:
+    name: haproxy
+    state: restarted
+  tags:
+    - restart

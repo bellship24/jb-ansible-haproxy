@@ -1,0 +1,29 @@
+# haproxy_status: latest
+# haproxy_frontend_port: 8443
+haproxy_backend_server_endpoint_list:
+  - {"hostname": "haproxy-ubuntu18", "ip": 172.17.0.5, "port": 6443}
+  - {"hostname": "haproxy-ubuntu20", "ip": 172.17.0.6, "port": 6443}
+  - {"hostname": "haproxy-centos7", "ip": 172.17.0.7, "port": 6443}
+
+# haproxy_conf: |
+#   #---------------------------------------------------------------------
+#   # apiserver frontend which proxys to the masters
+#   #---------------------------------------------------------------------
+#   frontend apiserver
+#       bind *:{{ haproxy_frontend_port }}
+#       mode tcp
+#       option tcplog
+#       default_backend apiserver
+
+#   #---------------------------------------------------------------------
+#   # round robin balancing for apiserver
+#   #---------------------------------------------------------------------
+#   backend apiserver
+#       option httpchk GET /livez
+#       http-check expect status 200
+#       mode tcp
+#       option ssl-hello-chk
+#       balance     roundrobin
+#           {% for node in haproxy_backend_server_endpoint_list %}
+#           server {{ node.hostname }} {{ node.ip }}:{{ node.port }} check
+#           {% endfor %}
